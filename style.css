@@ -435,22 +435,231 @@ body {
 }
 
 @media (max-width: 768px) {
-	.add-word-form {
-		flex-direction: column;
+	.container {
+		padding: 10px;
+	}
+
+	.header h1 {
+		font-size: 1.8rem;
+		margin-bottom: 5px;
+	}
+
+	.header p {
+		font-size: 0.9rem;
 	}
 
 	.nav {
 		flex-direction: column;
-		align-items: center;
+		gap: 8px;
+		margin-bottom: 20px;
+	}
+
+	.nav-btn {
+		padding: 10px 20px;
+		font-size: 14px;
+	}
+
+	.section {
+		padding: 20px;
+		margin-bottom: 10px;
+	}
+
+	.add-word-form {
+		flex-direction: column;
+		gap: 15px;
+	}
+
+	.input-group {
+		min-width: 100%;
+	}
+
+	.input-group input {
+		padding: 15px;
+		font-size: 16px;
+	}
+
+	.btn {
+		padding: 15px 20px;
+		font-size: 16px;
+		width: 100%;
+		margin: 5px 0;
+	}
+
+	.test-word {
+		font-size: 2rem;
+		margin-bottom: 15px;
+	}
+
+	.choice-btn {
+		padding: 18px;
+		font-size: 18px;
+		margin: 8px 0;
+		max-width: 100%;
 	}
 
 	.test-controls {
 		flex-direction: column;
-		align-items: center;
+		gap: 10px;
+		margin-top: 20px;
+	}
+
+	.test-controls .btn {
+		width: 100%;
+		margin: 5px 0;
+	}
+
+	.score {
+		flex-wrap: wrap;
+		gap: 10px;
+		padding: 15px;
+	}
+
+	.score-item {
+		flex: 1;
+		min-width: 120px;
+	}
+
+	.score-number {
+		font-size: 1.5rem;
 	}
 
 	.export-buttons {
 		flex-direction: column;
+		gap: 10px;
+	}
+
+	.export-buttons .btn {
+		width: 100%;
+	}
+
+	.word-list {
+		max-height: 250px;
+		padding: 10px;
+	}
+
+	.word-item {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+		padding: 15px;
+	}
+
+	.delete-btn {
+		align-self: flex-end;
+		padding: 8px 12px;
+	}
+
+	.format-tabs {
+		flex-wrap: wrap;
+		gap: 5px;
+	}
+
+	.format-tab {
+		flex: 1;
+		min-width: 60px;
+	}
+}
+
+/* iPhone SE 및 작은 화면 */
+@media (max-width: 375px) {
+	.container {
+		padding: 8px;
+	}
+
+	.header h1 {
+		font-size: 1.5rem;
+	}
+
+	.test-word {
+		font-size: 1.8rem;
+	}
+
+	.choice-btn {
+		padding: 15px;
+		font-size: 16px;
+	}
+
+	.score {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.score-item {
+		min-width: 100%;
+		text-align: left;
+		display: flex;
+		justify-content: space-between;
 		align-items: center;
+	}
+}
+
+/* iPad 최적화 */
+@media (min-width: 769px) and (max-width: 1024px) {
+	.container {
+		max-width: 900px;
+		padding: 25px;
+	}
+
+	.choice-btn {
+		max-width: 500px;
+		padding: 20px;
+		font-size: 18px;
+	}
+
+	.test-word {
+		font-size: 3rem;
+	}
+
+	.score {
+		max-width: 600px;
+		margin: 0 auto 20px;
+	}
+
+	.export-buttons {
+		max-width: 600px;
+		margin: 0 auto;
+	}
+}
+
+/* 세로 모드 최적화 */
+@media (orientation: portrait) and (max-width: 768px) {
+	.test-card {
+		min-height: 300px;
+		padding: 25px 15px;
+	}
+
+	.choice-btn {
+		margin: 6px 0;
+	}
+}
+
+/* 가로 모드 최적화 */
+@media (orientation: landscape) and (max-height: 500px) {
+	.header {
+		margin-bottom: 15px;
+	}
+
+	.header h1 {
+		font-size: 1.5rem;
+		margin-bottom: 5px;
+	}
+
+	.test-card {
+		min-height: 200px;
+		padding: 15px;
+	}
+
+	.test-word {
+		font-size: 1.8rem;
+		margin-bottom: 10px;
+	}
+
+	.choice-btn {
+		margin: 4px 0;
+		padding: 12px;
+	}
+
+	.score {
+		padding: 10px;
 	}
 }
