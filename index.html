@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>영단어 공부 사이트</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>🎯 영단어 공부 사이트</h1>
+				<p>단어를 추가하고 랜덤 테스트로 실력을 향상시키세요!</p>
+			</div>
+
+			<div class="nav">
+				<button class="nav-btn active" onclick="showSection('manage')">
+					단어 관리
+				</button>
+				<button class="nav-btn" onclick="showSection('test')">테스트</button>
+				<button class="nav-btn" onclick="showSection('results')">결과</button>
+			</div>
+
+			<div id="manage" class="section active">
+				<h2>📚 단어 관리</h2>
+
+				<!-- 탭 메뉴 -->
+				<div class="sub-nav">
+					<button class="sub-nav-btn active" onclick="showSubSection('manual')">
+						개별 추가
+					</button>
+					<button class="sub-nav-btn" onclick="showSubSection('bulk')">
+						일괄 추가
+					</button>
+					<button class="sub-nav-btn" onclick="showSubSection('export')">
+						내보내기
+					</button>
+				</div>
+
+				<!-- 개별 추가 섹션 -->
+				<div id="manual" class="sub-section active">
+					<div class="add-word-form">
+						<div class="input-group">
+							<label>영어 단어</label>
+							<input type="text" id="englishWord" placeholder="예: apple" />
+						</div>
+						<div class="input-group">
+							<label>한국어 뜻</label>
+							<input type="text" id="koreanMeaning" placeholder="예: 사과" />
+						</div>
+						<button class="btn" onclick="addWord()">단어 추가</button>
+					</div>
+				</div>
+
+				<!-- 일괄 추가 섹션 -->
+				<div id="bulk" class="sub-section">
+					<div class="upload-area">
+						<h3>📁 파일 업로드</h3>
+						<div class="file-upload">
+							<input
+								type="file"
+								id="fileInput"
+								accept=".xlsx,.xls,.json,.csv,.txt"
+								style="display: none"
+							/>
+							<button
+								class="btn"
+								onclick="document.getElementById('fileInput').click()"
+							>
+								파일 선택
+							</button>
+							<span id="fileName">선택된 파일이 없습니다</span>
+						</div>
+						<p class="file-info">
+							지원 형식: Excel (.xlsx, .xls), JSON (.json), CSV (.csv), TXT
+							(.txt)
+						</p>
+
+						<div class="format-examples">
+							<h4>파일 형식 예시:</h4>
+							<div class="format-tabs">
+								<button class="format-tab active" onclick="showFormat('excel')">
+									Excel
+								</button>
+								<button class="format-tab" onclick="showFormat('json')">
+									JSON
+								</button>
+								<button class="format-tab" onclick="showFormat('csv')">
+									CSV
+								</button>
+								<button class="format-tab" onclick="showFormat('txt')">
+									TXT
+								</button>
+							</div>
+							<div class="format-content" id="format-examples"></div>
+						</div>
+
+						<h3>✏️ 직접 입력</h3>
+						<textarea
+							id="bulkInput"
+							placeholder="여러 단어를 한 번에 입력하세요&#10;형식: 영어단어,한국어뜻 (한 줄에 하나씩)&#10;예:&#10;apple,사과&#10;banana,바나나&#10;orange,오렌지"
+						></textarea>
+						<button class="btn" onclick="processBulkInput()">일괄 추가</button>
+					</div>
+				</div>
+
+				<!-- 내보내기 섹션 -->
+				<div id="export" class="sub-section">
+					<div class="export-area">
+						<h3>📤 단어 목록 내보내기</h3>
+						<p>현재 등록된 단어들을 다양한 형식으로 내보낼 수 있습니다.</p>
+						<div class="export-buttons">
+							<button class="btn" onclick="exportData('json')">
+								JSON으로 내보내기
+							</button>
+							<button class="btn" onclick="exportData('csv')">
+								CSV로 내보내기
+							</button>
+							<button class="btn" onclick="exportData('txt')">
+								TXT로 내보내기
+							</button>
+							<button class="btn" onclick="exportData('excel')">
+								Excel로 내보내기
+							</button>
+						</div>
+
+						<div
+							style="
+								margin-top: 40px;
+								padding: 20px;
+								background: #fff3cd;
+								border-radius: 10px;
+								border: 1px solid #ffeaa7;
+							"
+						>
+							<h3 style="color: #856404; margin-bottom: 15px">⚠️ 위험 구역</h3>
+							<p style="color: #856404; margin-bottom: 15px">
+								모든 단어를 삭제합니다. 이 작업은 되돌릴 수 없습니다!
+							</p>
+							<button
+								class="btn"
+								style="background: #dc3545"
+								onclick="deleteAllWords()"
+							>
+								모든 단어 삭제
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div style="text-align: center; margin: 20px 0">
+					<span
+						>총 <strong id="wordCount">0</strong>개의 단어가 등록되어
+						있습니다.</span
+					>
+				</div>
+
+				<div class="word-list" id="wordList">
+					<p style="text-align: center; color: #999">등록된 단어가 없습니다.</p>
+				</div>
+			</div>
+
+			<div id="test" class="section">
+				<div class="test-info">
+					<h2>📝 단어 테스트</h2>
+					<p>
+						등록된 단어 중에서 최대 400개를 랜덤으로 선택하여 4지선다
+						테스트합니다.
+					</p>
+				</div>
+
+				<div class="score">
+					<div class="score-item">
+						<div class="score-number" id="currentNumber">0</div>
+						<div class="score-label">현재 문제</div>
+					</div>
+					<div class="score-item">
+						<div class="score-number" id="totalQuestions">0</div>
+						<div class="score-label">전체 문제</div>
+					</div>
+					<div class="score-item">
+						<div class="score-number" id="correctCount">0</div>
+						<div class="score-label">정답</div>
+					</div>
+					<div class="score-item">
+						<div class="score-number" id="wrongCount">0</div>
+						<div class="score-label">오답</div>
+					</div>
+				</div>
+
+				<div class="test-card" id="testCard">
+					<button class="btn" onclick="startTest()" id="startBtn">
+						테스트 시작
+					</button>
+				</div>
+
+				<div id="testResultsSection" style="display: none; margin-top: 20px">
+					<h3>틀린 문제 복습</h3>
+					<div id="wrongAnswers"></div>
+				</div>
+			</div>
+
+			<div id="results" class="section">
+				<h2>📊 테스트 결과</h2>
+				<div id="finalResults">
+					<p style="text-align: center; color: #999">
+						아직 완료된 테스트가 없습니다.
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+		<script src="script.js"></script>
+	</body>
+</html>
