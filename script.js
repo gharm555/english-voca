@@ -840,12 +840,8 @@ function showNextQuestion() {
 		)}">${choice}</button>`;
 	});
 
-	const posDisplay = currentWord.pos
-		? `<span style="color: #999; font-size: 0.9em; margin-left: 10px;">[${currentWord.pos}]</span>`
-		: "";
-
 	testCard.innerHTML = `
-        <div class="test-word">${currentWord.english}${posDisplay}</div>
+        <div class="test-word">${currentWord.english}</div>
         <div style="margin: 20px 0;" id="choicesContainer">
             ${choicesHTML}
         </div>
