@@ -935,5 +935,5 @@ function selectChoice(index, choice) {
 	setTimeout(() => {
 		currentTest++;
 		showNextQuestion();
-	}, 500);
+	}, 1000);
 }
