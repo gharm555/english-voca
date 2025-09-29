@@ -60,6 +60,7 @@ function showSubSection(sectionName) {
 function addWord() {
 	const english = document.getElementById("englishWord").value.trim();
 	const korean = document.getElementById("koreanMeaning").value.trim();
+	const pos = document.getElementById("partOfSpeech").value.trim();
 
 	if (!english || !korean) {
 		alert("영어 단어와 한국어 뜻을 모두 입력해주세요.");
@@ -73,13 +74,14 @@ function addWord() {
 		return;
 	}
 
-	words.push({ english, korean });
+	words.push({ english, korean, pos: pos || "" });
 	saveWords();
 	updateWordCount();
 	displayWords();
 
 	document.getElementById("englishWord").value = "";
 	document.getElementById("koreanMeaning").value = "";
+	document.getElementById("partOfSpeech").value = "";
 	document.getElementById("englishWord").focus();
 }
 
@@ -137,7 +139,14 @@ function displayWords() {
 			(word, index) => `
         <div class="word-item">
             <div class="word-content">
-                <div class="word-english">${word.english}</div>
+                <div class="word-english">
+                    ${word.english}
+                    ${
+											word.pos
+												? `<span style="color: #999; font-size: 0.9em; margin-left: 8px;">[${word.pos}]</span>`
+												: ""
+										}
+                </div>
                 <div class="word-korean">${word.korean}</div>
             </div>
             <button class="delete-btn" onclick="deleteWord(${index})">삭제</button>
@@ -227,7 +236,14 @@ function displayWrongAnswers() {
 			.map(
 				(item) => `
             <div class="wrong-answer-item">
-                <div class="wrong-answer-word">${item.word.english}</div>
+                <div class="wrong-answer-word">
+                    ${item.word.english}
+                    ${
+											item.word.pos
+												? `<span style="color: #999; font-size: 0.9em; margin-left: 8px;">[${item.word.pos}]</span>`
+												: ""
+										}
+                </div>
                 <div class="wrong-answer-details">
                     정답: ${item.correctAnswer}<br>
                     선택한 답: ${item.userAnswer}
@@ -309,6 +325,12 @@ function loadWords() {
 	const saved = localStorage.getItem("vocabularyWords");
 	if (saved) {
 		words = JSON.parse(saved);
+		// 기존 데이터에 pos 필드가 없으면 추가
+		words = words.map((word) => ({
+			english: word.english,
+			korean: word.korean,
+			pos: word.pos || "",
+		}));
 	}
 }
 
@@ -320,55 +342,65 @@ function showFormat(format) {
 
 	const examples = {
 		excel: `Excel 파일 형식:
-┌─────────┬──────────┐
-│  영어   │  한국어  │
-├─────────┼──────────┤
-│ apple   │ 사과     │
-│ banana  │ 바나나   │
-│ orange  │ 오렌지   │
-└─────────┴──────────┘
+┌─────────┬────────────────┬────────┐
+│  영어   │    한국어      │  품사  │
+├─────────┼────────────────┼────────┤
+│ run     │ 달리다; 운영하다│  동사  │
+│ bank    │ 은행; 강둑     │  명사  │
+│ light   │ 빛; 가벼운     │명/형   │
+└─────────┴────────────────┴────────┘
 
 - 첫 번째 열: 영어 단어
-- 두 번째 열: 한국어 뜻
+- 두 번째 열: 한국어 뜻 (여러 뜻은 세미콜론으로 구분)
+- 세 번째 열: 품사 (선택사항)
 - 첫 행은 헤더(선택사항)`,
 
 		json: `JSON 파일 형식:
 [
   {
-    "english": "apple",
-    "korean": "사과"
+    "english": "run",
+    "korean": "달리다; 운영하다",
+    "pos": "동사"
   },
   {
-    "english": "banana", 
-    "korean": "바나나"
+    "english": "bank", 
+    "korean": "은행; 강둑",
+    "pos": "명사"
   },
   {
-    "english": "orange",
-    "korean": "오렌지"
+    "english": "light",
+    "korean": "빛; 가벼운",
+    "pos": "명/형"
   }
-]`,
+]
+
+- pos(품사)는 생략 가능`,
 
 		csv: `CSV 파일 형식:
-apple,사과
-banana,바나나
-orange,오렌지
+"run","달리다; 운영하다","동사"
+"bank","은행; 강둑","명사"
+"light","빛; 가벼운","명/형"
 
-- 쉼표(,)로 구분
-- 한 줄에 하나씩
-- 따옴표 불필요`,
+또는 품사 없이:
+"run","달리다; 운영하다"
+"bank","은행; 강둑"
+
+- 따옴표로 감싸기 (쉼표 포함 가능)
+- 여러 뜻은 세미콜론(;)으로 구분
+- 품사는 선택사항`,
 
 		txt: `TXT 파일 형식:
-apple,사과
-banana,바나나
-orange,오렌지
+run|달리다; 운영하다|동사
+bank|은행; 강둑|명사
+light|빛; 가벼운|명/형
 
-또는
+또는 품사 없이:
+run|달리다; 운영하다
+bank|은행; 강둑
 
-apple:사과
-banana:바나나  
-orange:오렌지
-
-- 쉼표(,) 또는 콜론(:)으로 구분`,
+- 파이프(|)로 구분
+- 여러 뜻은 세미콜론(;)으로 구분
+- 품사는 선택사항`,
 	};
 
 	document.getElementById("format-examples").textContent = examples[format];
@@ -435,7 +467,7 @@ function processExcelFile(arrayBuffer) {
 		const newWords = [];
 		let startRow = 0;
 
-		// 첫 번째 행이 헤더인지 확인 (영어, 한국어, English, Korean 등)
+		// 첫 번째 행이 헤더인지 확인
 		if (jsonData.length > 0 && jsonData[0].length >= 2) {
 			const firstCell = jsonData[0][0]?.toString().toLowerCase().trim();
 			const secondCell = jsonData[0][1]?.toString().toLowerCase().trim();
@@ -449,6 +481,8 @@ function processExcelFile(arrayBuffer) {
 				"한국어",
 				"korean",
 				"kor",
+				"뜻",
+				"meaning",
 			];
 			const isHeader = headerKeywords.some(
 				(keyword) =>
@@ -456,7 +490,7 @@ function processExcelFile(arrayBuffer) {
 			);
 
 			if (isHeader) {
-				startRow = 1; // 헤더 행 건너뛰기
+				startRow = 1;
 			}
 		}
 
@@ -466,8 +500,10 @@ function processExcelFile(arrayBuffer) {
 			if (row.length >= 2 && row[0] && row[1]) {
 				const english = row[0].toString().trim();
 				const korean = row[1].toString().trim();
+				const pos = row[2] ? row[2].toString().trim() : "";
+
 				if (english && korean) {
-					newWords.push({ english, korean });
+					newWords.push({ english, korean, pos });
 				}
 			}
 		}
@@ -489,6 +525,7 @@ function processJsonFile(text) {
 					newWords.push({
 						english: item.english.toString().trim(),
 						korean: item.korean.toString().trim(),
+						pos: item.pos ? item.pos.toString().trim() : "",
 					});
 				}
 			});
@@ -512,8 +549,10 @@ function processCsvFile(text) {
 					if (row.length >= 2 && row[0] && row[1]) {
 						const english = row[0].toString().trim();
 						const korean = row[1].toString().trim();
+						const pos = row[2] ? row[2].toString().trim() : "";
+
 						if (english && korean) {
-							newWords.push({ english, korean });
+							newWords.push({ english, korean, pos });
 						}
 					}
 				});
@@ -537,7 +576,10 @@ function processTxtFile(text) {
 			line = line.trim();
 			if (line) {
 				let parts;
-				if (line.includes(",")) {
+				// 파이프(|) 구분자 우선, 없으면 쉼표, 없으면 콜론
+				if (line.includes("|")) {
+					parts = line.split("|");
+				} else if (line.includes(",")) {
 					parts = line.split(",");
 				} else if (line.includes(":")) {
 					parts = line.split(":");
@@ -548,8 +590,10 @@ function processTxtFile(text) {
 				if (parts.length >= 2) {
 					const english = parts[0].trim();
 					const korean = parts[1].trim();
+					const pos = parts[2] ? parts[2].trim() : "";
+
 					if (english && korean) {
-						newWords.push({ english, korean });
+						newWords.push({ english, korean, pos });
 					}
 				}
 			}
@@ -575,7 +619,10 @@ function processBulkInput() {
 		line = line.trim();
 		if (line) {
 			let parts;
-			if (line.includes(",")) {
+			// 파이프(|) 구분자 우선, 없으면 쉼표, 없으면 콜론
+			if (line.includes("|")) {
+				parts = line.split("|");
+			} else if (line.includes(",")) {
 				parts = line.split(",");
 			} else if (line.includes(":")) {
 				parts = line.split(":");
@@ -586,8 +633,10 @@ function processBulkInput() {
 			if (parts.length >= 2) {
 				const english = parts[0].trim();
 				const korean = parts[1].trim();
+				const pos = parts[2] ? parts[2].trim() : "";
+
 				if (english && korean) {
-					newWords.push({ english, korean });
+					newWords.push({ english, korean, pos });
 				}
 			}
 		}
@@ -648,25 +697,37 @@ function exportData(format) {
 			break;
 
 		case "csv":
+			// CSV는 따옴표로 감싸서 쉼표 보호
 			content = words
-				.map((word) => `${word.english},${word.korean}`)
+				.map((word) => {
+					const pos = word.pos || "";
+					return pos
+						? `"${word.english}","${word.korean}","${pos}"`
+						: `"${word.english}","${word.korean}"`;
+				})
 				.join("\n");
 			filename = `vocabulary_${timestamp}.csv`;
-			mimeType = "text/csv";
+			mimeType = "text/csv;charset=utf-8";
 			break;
 
 		case "txt":
+			// TXT는 파이프(|)로 구분
 			content = words
-				.map((word) => `${word.english},${word.korean}`)
+				.map((word) => {
+					const pos = word.pos || "";
+					return pos
+						? `${word.english}|${word.korean}|${pos}`
+						: `${word.english}|${word.korean}`;
+				})
 				.join("\n");
 			filename = `vocabulary_${timestamp}.txt`;
-			mimeType = "text/plain";
+			mimeType = "text/plain;charset=utf-8";
 			break;
 
 		case "excel":
 			const ws = XLSX.utils.aoa_to_sheet([
-				["영어", "한국어"], // 헤더 행 추가
-				...words.map((word) => [word.english, word.korean]),
+				["영어", "한국어", "품사"],
+				...words.map((word) => [word.english, word.korean, word.pos || ""]),
 			]);
 			const wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, ws, "Vocabulary");
@@ -674,7 +735,9 @@ function exportData(format) {
 			return;
 	}
 
-	const blob = new Blob([content], { type: mimeType });
+	// UTF-8 BOM 추가 (Excel에서 한글 깨짐 방지)
+	const BOM = "\uFEFF";
+	const blob = new Blob([BOM + content], { type: mimeType });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
@@ -703,8 +766,12 @@ function showNextQuestion() {
 		)}">${choice}</button>`;
 	});
 
+	const posDisplay = currentWord.pos
+		? `<span style="color: #999; font-size: 0.9em; margin-left: 10px;">[${currentWord.pos}]</span>`
+		: "";
+
 	testCard.innerHTML = `
-        <div class="test-word">${currentWord.english}</div>
+        <div class="test-word">${currentWord.english}${posDisplay}</div>
         <div style="margin: 20px 0;" id="choicesContainer">
             ${choicesHTML}
         </div>
@@ -800,9 +867,9 @@ function selectChoice(index, choice) {
 
 	updateTestUI();
 
-	// 1.5초 후 자동으로 다음 문제
+	// 0.5초 후 자동으로 다음 문제
 	setTimeout(() => {
 		currentTest++;
 		showNextQuestion();
-	}, 1500);
+	}, 500);
 }

@@ -42,11 +42,19 @@
 					<div class="add-word-form">
 						<div class="input-group">
 							<label>영어 단어</label>
-							<input type="text" id="englishWord" placeholder="예: apple" />
+							<input type="text" id="englishWord" placeholder="예: run" />
 						</div>
 						<div class="input-group">
-							<label>한국어 뜻</label>
-							<input type="text" id="koreanMeaning" placeholder="예: 사과" />
+							<label>한국어 뜻 (여러 뜻은 세미콜론으로 구분)</label>
+							<input
+								type="text"
+								id="koreanMeaning"
+								placeholder="예: 달리다; 운영하다; 흐르다"
+							/>
+						</div>
+						<div class="input-group" style="max-width: 150px">
+							<label>품사 (선택)</label>
+							<input type="text" id="partOfSpeech" placeholder="예: 동사" />
 						</div>
 						<button class="btn" onclick="addWord()">단어 추가</button>
 					</div>
@@ -98,7 +106,7 @@
 						<h3>✏️ 직접 입력</h3>
 						<textarea
 							id="bulkInput"
-							placeholder="여러 단어를 한 번에 입력하세요&#10;형식: 영어단어,한국어뜻 (한 줄에 하나씩)&#10;예:&#10;apple,사과&#10;banana,바나나&#10;orange,오렌지"
+							placeholder="여러 단어를 한 번에 입력하세요&#10;형식: 영어|한국어|품사 (한 줄에 하나씩)&#10;&#10;예시:&#10;run|달리다; 운영하다|동사&#10;bank|은행; 강둑|명사&#10;light|빛; 가벼운|명/형&#10;&#10;품사는 생략 가능:&#10;apple|사과&#10;banana|바나나"
 						></textarea>
 						<button class="btn" onclick="processBulkInput()">일괄 추가</button>
 					</div>
