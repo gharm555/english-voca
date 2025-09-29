@@ -189,11 +189,55 @@ function displayWords() {
                 </div>
                 <div class="word-korean">${word.korean}</div>
             </div>
-            <button class="delete-btn" onclick="deleteWord(${index})">삭제</button>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn" style="padding: 5px 10px; font-size: 12px; background: #667eea;" onclick="editWord(${index})">수정</button>
+                <button class="delete-btn" onclick="deleteWord(${index})">삭제</button>
+            </div>
         </div>
     `
 		)
 		.join("");
+}
+
+function editWord(index) {
+	const word = words[index];
+
+	const newEnglish = prompt("영어 단어:", word.english);
+	if (newEnglish === null) return; // 취소
+
+	const newKorean = prompt("한국어 뜻:", word.korean);
+	if (newKorean === null) return; // 취소
+
+	const newPos = prompt("품사 (선택사항):", word.pos || "");
+	if (newPos === null) return; // 취소
+
+	// 입력값 검증
+	if (!newEnglish.trim() || !newKorean.trim()) {
+		alert("영어 단어와 한국어 뜻은 필수입니다.");
+		return;
+	}
+
+	// 중복 체크 (자기 자신 제외)
+	const duplicate = words.find(
+		(w, i) =>
+			i !== index && w.english.toLowerCase() === newEnglish.trim().toLowerCase()
+	);
+
+	if (duplicate) {
+		alert("이미 등록된 단어입니다.");
+		return;
+	}
+
+	// 수정
+	words[index] = {
+		english: newEnglish.trim(),
+		korean: newKorean.trim(),
+		pos: newPos.trim(),
+	};
+
+	saveWords();
+	displayWords();
+	alert("수정되었습니다.");
 }
 
 // 테스트 관련 함수들
