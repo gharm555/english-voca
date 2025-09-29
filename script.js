@@ -10,14 +10,23 @@ let wrongAnswersList = [];
 let currentChoices = [];
 let correctAnswer = "";
 
+// 기본 CSV 데이터
+const defaultCSVFiles = [
+	"day1-5.csv",
+	"day6-10.csv",
+	"day11-15.csv",
+	"day16-20.csv",
+];
+
 // 페이지 로드 시 초기화
-window.onload = function () {
-	loadWords();
+window.onload = async function () {
+	await loadWords();
 	updateWordCount();
 	displayWords();
 	setupFileUpload();
 	showFormat("excel");
 	setupEventListeners();
+	displayResults();
 };
 
 // 이벤트 리스너 설정
@@ -180,12 +189,7 @@ function startTest() {
 	document.getElementById("testResultsSection").style.display = "none";
 
 	updateTestUI();
-
-	// 1.5초 후 자동으로 다음 문제
-	setTimeout(() => {
-		currentTest++;
-		showNextQuestion();
-	}, 1500);
+	showNextQuestion();
 }
 
 function skipQuestion() {
@@ -321,7 +325,7 @@ function saveWords() {
 	localStorage.setItem("vocabularyWords", JSON.stringify(words));
 }
 
-function loadWords() {
+async function loadWords() {
 	const saved = localStorage.getItem("vocabularyWords");
 	if (saved) {
 		words = JSON.parse(saved);
@@ -331,6 +335,63 @@ function loadWords() {
 			korean: word.korean,
 			pos: word.pos || "",
 		}));
+	} else {
+		// localStorage가 비어있으면 기본 CSV 파일들 로드
+		await loadDefaultWords();
+	}
+}
+
+// 기본 단어 로드 함수
+async function loadDefaultWords() {
+	console.log("기본 단어 세트를 로드하는 중...");
+
+	for (const filename of defaultCSVFiles) {
+		try {
+			const response = await fetch(filename);
+			const text = await response.text();
+
+			Papa.parse(text, {
+				complete: function (results) {
+					const newWords = [];
+					results.data.forEach((row) => {
+						if (row.length >= 2 && row[0] && row[1]) {
+							const english = row[0].toString().trim();
+							const korean = row[1].toString().trim();
+							const pos = row[2] ? row[2].toString().trim() : "";
+
+							if (english && korean) {
+								// 중복 체크
+								const exists = words.find(
+									(word) => word.english.toLowerCase() === english.toLowerCase()
+								);
+								if (!exists) {
+									newWords.push({ english, korean, pos });
+								}
+							}
+						}
+					});
+
+					words = words.concat(newWords);
+					console.log(`${filename}에서 ${newWords.length}개 단어 로드 완료`);
+				},
+				error: function (error) {
+					console.error(`${filename} 로드 실패:`, error);
+				},
+			});
+
+			// 각 파일 로드 후 잠시 대기
+			await new Promise((resolve) => setTimeout(resolve, 100));
+		} catch (error) {
+			console.error(`${filename} 로드 중 오류:`, error);
+		}
+	}
+
+	// 모든 파일 로드 후 저장
+	if (words.length > 0) {
+		saveWords();
+		updateWordCount();
+		displayWords();
+		console.log(`총 ${words.length}개의 기본 단어가 로드되었습니다!`);
 	}
 }
 
