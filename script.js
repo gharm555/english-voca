@@ -321,16 +321,16 @@ function showFormat(format) {
 	const examples = {
 		excel: `Excel 파일 형식:
 ┌─────────┬──────────┐
-│    A    │    B     │
+│  영어   │  한국어  │
 ├─────────┼──────────┤
 │ apple   │ 사과     │
 │ banana  │ 바나나   │
 │ orange  │ 오렌지   │
 └─────────┴──────────┘
 
-- A열: 영어 단어
-- B열: 한국어 뜻
-- 첫 번째 행부터 데이터 입력`,
+- 첫 번째 열: 영어 단어
+- 두 번째 열: 한국어 뜻
+- 첫 행은 헤더(선택사항)`,
 
 		json: `JSON 파일 형식:
 [
@@ -433,7 +433,36 @@ function processExcelFile(arrayBuffer) {
 		const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
 		const newWords = [];
-		jsonData.forEach((row) => {
+		let startRow = 0;
+
+		// 첫 번째 행이 헤더인지 확인 (영어, 한국어, English, Korean 등)
+		if (jsonData.length > 0 && jsonData[0].length >= 2) {
+			const firstCell = jsonData[0][0]?.toString().toLowerCase().trim();
+			const secondCell = jsonData[0][1]?.toString().toLowerCase().trim();
+
+			const headerKeywords = [
+				"영어",
+				"english",
+				"eng",
+				"단어",
+				"word",
+				"한국어",
+				"korean",
+				"kor",
+			];
+			const isHeader = headerKeywords.some(
+				(keyword) =>
+					firstCell?.includes(keyword) || secondCell?.includes(keyword)
+			);
+
+			if (isHeader) {
+				startRow = 1; // 헤더 행 건너뛰기
+			}
+		}
+
+		// 데이터 행부터 처리
+		for (let i = startRow; i < jsonData.length; i++) {
+			const row = jsonData[i];
 			if (row.length >= 2 && row[0] && row[1]) {
 				const english = row[0].toString().trim();
 				const korean = row[1].toString().trim();
@@ -441,7 +470,7 @@ function processExcelFile(arrayBuffer) {
 					newWords.push({ english, korean });
 				}
 			}
-		});
+		}
 
 		addBulkWords(newWords);
 	} catch (error) {
@@ -635,12 +664,10 @@ function exportData(format) {
 			break;
 
 		case "excel":
-			const ws = XLSX.utils.json_to_sheet(
-				words.map((word) => ({
-					영어: word.english,
-					한국어: word.korean,
-				}))
-			);
+			const ws = XLSX.utils.aoa_to_sheet([
+				["영어", "한국어"], // 헤더 행 추가
+				...words.map((word) => [word.english, word.korean]),
+			]);
 			const wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, ws, "Vocabulary");
 			XLSX.writeFile(wb, `vocabulary_${timestamp}.xlsx`);
