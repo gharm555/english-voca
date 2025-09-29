@@ -66,12 +66,13 @@
 				<!-- 일괄 추가 섹션 -->
 				<div id="bulk" class="sub-section">
 					<div class="upload-area">
-						<h3>📁 파일 업로드</h3>
+						<h3>📁 파일 업로드 (여러 파일 동시 선택 가능)</h3>
 						<div class="file-upload">
 							<input
 								type="file"
 								id="fileInput"
 								accept=".xlsx,.xls,.json,.csv,.txt"
+								multiple
 								style="display: none"
 							/>
 							<button
@@ -84,7 +85,12 @@
 						</div>
 						<p class="file-info">
 							지원 형식: Excel (.xlsx, .xls), JSON (.json), CSV (.csv), TXT
-							(.txt)
+							(.txt)<br />
+							💡
+							<strong
+								>Shift 또는 Ctrl 키를 누른 채로 여러 파일을 선택할 수
+								있습니다!</strong
+							>
 						</p>
 
 						<div class="format-examples">

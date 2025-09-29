@@ -1,3 +1,39 @@
+// 코드 보호
+(function () {
+	"use strict";
+
+	// 개발자 도구 감지 및 차단
+	const devtools = /./;
+	devtools.toString = function () {
+		this.opened = true;
+	};
+
+	// 우클릭 방지
+	document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+	// F12, Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+U 방지
+	document.addEventListener("keydown", (e) => {
+		if (
+			e.keyCode === 123 || // F12
+			(e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
+			(e.ctrlKey && e.shiftKey && e.keyCode === 67) || // Ctrl+Shift+C
+			(e.ctrlKey && e.keyCode === 85)
+		) {
+			// Ctrl+U
+			e.preventDefault();
+			return false;
+		}
+	});
+
+	// 콘솔 로그 무력화
+	console.log =
+		console.warn =
+		console.error =
+		console.info =
+		console.debug =
+			function () {};
+})();
+
 // 전역 변수
 let words = [];
 let testWords = [];
