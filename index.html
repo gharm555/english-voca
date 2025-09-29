@@ -96,16 +96,19 @@
 						<div class="format-examples">
 							<h4>파일 형식 예시:</h4>
 							<div class="format-tabs">
-								<button class="format-tab active" onclick="showFormat('excel')">
+								<button
+									class="format-tab active"
+									onclick="showFormat('excel', event)"
+								>
 									Excel
 								</button>
-								<button class="format-tab" onclick="showFormat('json')">
+								<button class="format-tab" onclick="showFormat('json', event)">
 									JSON
 								</button>
-								<button class="format-tab" onclick="showFormat('csv')">
+								<button class="format-tab" onclick="showFormat('csv', event)">
 									CSV
 								</button>
-								<button class="format-tab" onclick="showFormat('txt')">
+								<button class="format-tab" onclick="showFormat('txt', event)">
 									TXT
 								</button>
 							</div>

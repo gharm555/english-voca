@@ -60,10 +60,31 @@ window.onload = async function () {
 	updateWordCount();
 	displayWords();
 	setupFileUpload();
-	showFormat("excel");
+	initializeFormatTab();
 	setupEventListeners();
 	displayResults();
 };
+
+// 초기 포맷 탭 설정
+function initializeFormatTab() {
+	const examples = {
+		excel: `Excel 파일 형식:
+┌─────────┬────────────────┬────────┐
+│  영어   │    한국어      │  품사  │
+├─────────┼────────────────┼────────┤
+│ run     │ 달리다; 운영하다│  동사  │
+│ bank    │ 은행; 강둑     │  명사  │
+│ light   │ 빛; 가벼운     │명/형   │
+└─────────┴────────────────┴────────┘
+
+- 첫 번째 열: 영어 단어
+- 두 번째 열: 한국어 뜻 (여러 뜻은 세미콜론으로 구분)
+- 세 번째 열: 품사 (선택사항)
+- 첫 행은 헤더(선택사항)`,
+	};
+
+	document.getElementById("format-examples").textContent = examples.excel;
+}
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
@@ -432,10 +453,12 @@ async function loadDefaultWords() {
 }
 
 // 파일 처리 관련 함수들
-function showFormat(format) {
-	const formatTabs = document.querySelectorAll(".format-tab");
-	formatTabs.forEach((tab) => tab.classList.remove("active"));
-	event.target.classList.add("active");
+function showFormat(format, event) {
+	if (event) {
+		const formatTabs = document.querySelectorAll(".format-tab");
+		formatTabs.forEach((tab) => tab.classList.remove("active"));
+		event.target.classList.add("active");
+	}
 
 	const examples = {
 		excel: `Excel 파일 형식:
@@ -504,15 +527,83 @@ bank|은행; 강둑
 }
 
 function setupFileUpload() {
-	document
-		.getElementById("fileInput")
-		.addEventListener("change", function (event) {
-			const file = event.target.files[0];
-			if (file) {
-				document.getElementById("fileName").textContent = file.name;
-				processFile(file);
-			}
-		});
+	const fileInput = document.getElementById("fileInput");
+
+	fileInput.addEventListener("change", async function (event) {
+		const files = event.target.files;
+		if (files.length === 0) return;
+
+		// 파일명 표시
+		if (files.length === 1) {
+			document.getElementById("fileName").textContent = files[0].name;
+		} else {
+			document.getElementById(
+				"fileName"
+			).textContent = `${files.length}개 파일 선택됨`;
+		}
+
+		// 여러 파일 순차 처리
+		for (let i = 0; i < files.length; i++) {
+			await processFileAsync(files[i]);
+		}
+
+		// 처리 완료 메시지
+		if (files.length > 1) {
+			alert(`${files.length}개 파일 처리 완료!`);
+		}
+	});
+}
+
+// 비동기 파일 처리
+function processFileAsync(file) {
+	return new Promise((resolve, reject) => {
+		const extension = file.name.split(".").pop().toLowerCase();
+		const reader = new FileReader();
+
+		switch (extension) {
+			case "xlsx":
+			case "xls":
+				reader.onload = function (e) {
+					processExcelFile(e.target.result);
+					resolve();
+				};
+				reader.onerror = reject;
+				reader.readAsArrayBuffer(file);
+				break;
+
+			case "json":
+				reader.onload = function (e) {
+					processJsonFile(e.target.result);
+					resolve();
+				};
+				reader.onerror = reject;
+				reader.readAsText(file);
+				break;
+
+			case "csv":
+				reader.onload = function (e) {
+					processCsvFile(e.target.result);
+					// CSV는 Papa.parse가 비동기라서 약간 기다림
+					setTimeout(resolve, 100);
+				};
+				reader.onerror = reject;
+				reader.readAsText(file);
+				break;
+
+			case "txt":
+				reader.onload = function (e) {
+					processTxtFile(e.target.result);
+					resolve();
+				};
+				reader.onerror = reject;
+				reader.readAsText(file);
+				break;
+
+			default:
+				alert("지원하지 않는 파일 형식입니다: " + file.name);
+				resolve();
+		}
+	});
 }
 
 function processFile(file) {
