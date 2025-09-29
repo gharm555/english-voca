@@ -2,36 +2,21 @@
 (function () {
 	"use strict";
 
-	// 개발자 도구 감지 및 차단
-	const devtools = /./;
-	devtools.toString = function () {
-		this.opened = true;
-	};
-
 	// 우클릭 방지
 	document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 	// F12, Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+U 방지
 	document.addEventListener("keydown", (e) => {
 		if (
-			e.keyCode === 123 || // F12
-			(e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
-			(e.ctrlKey && e.shiftKey && e.keyCode === 67) || // Ctrl+Shift+C
+			e.keyCode === 123 ||
+			(e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+			(e.ctrlKey && e.shiftKey && e.keyCode === 67) ||
 			(e.ctrlKey && e.keyCode === 85)
 		) {
-			// Ctrl+U
 			e.preventDefault();
 			return false;
 		}
 	});
-
-	// 콘솔 로그 무력화
-	console.log =
-		console.warn =
-		console.error =
-		console.info =
-		console.debug =
-			function () {};
 })();
 
 // 전역 변수
@@ -46,17 +31,9 @@ let wrongAnswersList = [];
 let currentChoices = [];
 let correctAnswer = "";
 
-// 기본 CSV 데이터
-const defaultCSVFiles = [
-	"day1-5.csv",
-	"day6-10.csv",
-	"day11-15.csv",
-	"day16-20.csv",
-];
-
 // 페이지 로드 시 초기화
-window.onload = async function () {
-	await loadWords();
+window.onload = function () {
+	loadWords();
 	updateWordCount();
 	displayWords();
 	setupFileUpload();
@@ -88,7 +65,6 @@ function initializeFormatTab() {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
-	// Enter 키로 단어 추가
 	const koreanInput = document.getElementById("koreanMeaning");
 	if (koreanInput) {
 		koreanInput.addEventListener("keypress", function (e) {
@@ -178,10 +154,8 @@ function deleteAllWords() {
 			saveWords();
 			updateWordCount();
 			displayWords();
-
 			localStorage.removeItem("testResults");
 			displayResults();
-
 			alert("모든 단어가 삭제되었습니다.");
 		}
 	}
@@ -382,73 +356,15 @@ function saveWords() {
 	localStorage.setItem("vocabularyWords", JSON.stringify(words));
 }
 
-async function loadWords() {
+function loadWords() {
 	const saved = localStorage.getItem("vocabularyWords");
 	if (saved) {
 		words = JSON.parse(saved);
-		// 기존 데이터에 pos 필드가 없으면 추가
 		words = words.map((word) => ({
 			english: word.english,
 			korean: word.korean,
 			pos: word.pos || "",
 		}));
-	} else {
-		// localStorage가 비어있으면 기본 CSV 파일들 로드
-		await loadDefaultWords();
-	}
-}
-
-// 기본 단어 로드 함수
-async function loadDefaultWords() {
-	console.log("기본 단어 세트를 로드하는 중...");
-
-	for (const filename of defaultCSVFiles) {
-		try {
-			const response = await fetch(filename);
-			const text = await response.text();
-
-			Papa.parse(text, {
-				complete: function (results) {
-					const newWords = [];
-					results.data.forEach((row) => {
-						if (row.length >= 2 && row[0] && row[1]) {
-							const english = row[0].toString().trim();
-							const korean = row[1].toString().trim();
-							const pos = row[2] ? row[2].toString().trim() : "";
-
-							if (english && korean) {
-								// 중복 체크
-								const exists = words.find(
-									(word) => word.english.toLowerCase() === english.toLowerCase()
-								);
-								if (!exists) {
-									newWords.push({ english, korean, pos });
-								}
-							}
-						}
-					});
-
-					words = words.concat(newWords);
-					console.log(`${filename}에서 ${newWords.length}개 단어 로드 완료`);
-				},
-				error: function (error) {
-					console.error(`${filename} 로드 실패:`, error);
-				},
-			});
-
-			// 각 파일 로드 후 잠시 대기
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		} catch (error) {
-			console.error(`${filename} 로드 중 오류:`, error);
-		}
-	}
-
-	// 모든 파일 로드 후 저장
-	if (words.length > 0) {
-		saveWords();
-		updateWordCount();
-		displayWords();
-		console.log(`총 ${words.length}개의 기본 단어가 로드되었습니다!`);
 	}
 }
 
@@ -533,7 +449,6 @@ function setupFileUpload() {
 		const files = event.target.files;
 		if (files.length === 0) return;
 
-		// 파일명 표시
 		if (files.length === 1) {
 			document.getElementById("fileName").textContent = files[0].name;
 		} else {
@@ -545,33 +460,28 @@ function setupFileUpload() {
 		let totalAdded = 0;
 		let totalDuplicate = 0;
 
-		// 여러 파일 순차 처리
 		for (let i = 0; i < files.length; i++) {
 			const result = await processFileAsync(files[i]);
 			totalAdded += result.added;
 			totalDuplicate += result.duplicate;
 		}
 
-		// 처리 완료 메시지
 		let message = `${totalAdded}개의 단어가 추가되었습니다.`;
 		if (totalDuplicate > 0) {
 			message += `\n${totalDuplicate}개의 중복 단어는 제외되었습니다.`;
 		}
 		alert(message);
 
-		// 파일명 업데이트
 		if (files.length > 1) {
 			document.getElementById(
 				"fileName"
 			).textContent = `${files.length}개 파일 처리 완료`;
 		}
 
-		// 파일 입력 초기화
 		fileInput.value = "";
 	});
 }
 
-// 비동기 파일 처리
 function processFileAsync(file) {
 	return new Promise((resolve, reject) => {
 		const extension = file.name.split(".").pop().toLowerCase();
@@ -581,7 +491,7 @@ function processFileAsync(file) {
 			case "xlsx":
 			case "xls":
 				reader.onload = function (e) {
-					const result = processExcelFileReturn(e.target.result);
+					const result = processExcelFile(e.target.result);
 					resolve(result);
 				};
 				reader.onerror = reject;
@@ -590,7 +500,7 @@ function processFileAsync(file) {
 
 			case "json":
 				reader.onload = function (e) {
-					const result = processJsonFileReturn(e.target.result);
+					const result = processJsonFile(e.target.result);
 					resolve(result);
 				};
 				reader.onerror = reject;
@@ -599,7 +509,7 @@ function processFileAsync(file) {
 
 			case "csv":
 				reader.onload = function (e) {
-					processCsvFileWithCallback(e.target.result, resolve);
+					processCsvFile(e.target.result, resolve);
 				};
 				reader.onerror = reject;
 				reader.readAsText(file);
@@ -607,7 +517,7 @@ function processFileAsync(file) {
 
 			case "txt":
 				reader.onload = function (e) {
-					const result = processTxtFileReturn(e.target.result);
+					const result = processTxtFile(e.target.result);
 					resolve(result);
 				};
 				reader.onerror = reject;
@@ -621,46 +531,7 @@ function processFileAsync(file) {
 	});
 }
 
-function processFile(file) {
-	const extension = file.name.split(".").pop().toLowerCase();
-	const reader = new FileReader();
-
-	switch (extension) {
-		case "xlsx":
-		case "xls":
-			reader.onload = function (e) {
-				processExcelFile(e.target.result);
-			};
-			reader.readAsArrayBuffer(file);
-			break;
-
-		case "json":
-			reader.onload = function (e) {
-				processJsonFile(e.target.result);
-			};
-			reader.readAsText(file);
-			break;
-
-		case "csv":
-			reader.onload = function (e) {
-				processCsvFile(e.target.result);
-			};
-			reader.readAsText(file);
-			break;
-
-		case "txt":
-			reader.onload = function (e) {
-				processTxtFile(e.target.result);
-			};
-			reader.readAsText(file);
-			break;
-
-		default:
-			alert("지원하지 않는 파일 형식입니다.");
-	}
-}
-
-function processExcelFileReturn(arrayBuffer) {
+function processExcelFile(arrayBuffer) {
 	try {
 		const workbook = XLSX.read(arrayBuffer, { type: "array" });
 		const sheetName = workbook.SheetNames[0];
@@ -716,7 +587,7 @@ function processExcelFileReturn(arrayBuffer) {
 	}
 }
 
-function processJsonFileReturn(text) {
+function processJsonFile(text) {
 	try {
 		const data = JSON.parse(text);
 		const newWords = [];
@@ -743,7 +614,7 @@ function processJsonFileReturn(text) {
 	}
 }
 
-function processCsvFileWithCallback(text, callback) {
+function processCsvFile(text, callback) {
 	try {
 		Papa.parse(text, {
 			complete: function (results) {
@@ -773,7 +644,7 @@ function processCsvFileWithCallback(text, callback) {
 	}
 }
 
-function processTxtFileReturn(text) {
+function processTxtFile(text) {
 	try {
 		const lines = text.split("\n");
 		const newWords = [];
@@ -811,6 +682,52 @@ function processTxtFileReturn(text) {
 	}
 }
 
+function processBulkInput() {
+	const input = document.getElementById("bulkInput").value.trim();
+	if (!input) {
+		alert("내용을 입력해주세요.");
+		return;
+	}
+
+	const lines = input.split("\n");
+	const newWords = [];
+
+	lines.forEach((line) => {
+		line = line.trim();
+		if (line) {
+			let parts;
+			if (line.includes("|")) {
+				parts = line.split("|");
+			} else if (line.includes(",")) {
+				parts = line.split(",");
+			} else if (line.includes(":")) {
+				parts = line.split(":");
+			} else {
+				return;
+			}
+
+			if (parts.length >= 2) {
+				const english = parts[0].trim();
+				const korean = parts[1].trim();
+				const pos = parts[2] ? parts[2].trim() : "";
+
+				if (english && korean) {
+					newWords.push({ english, korean, pos });
+				}
+			}
+		}
+	});
+
+	const result = addBulkWordsReturn(newWords);
+	let message = `${result.added}개의 단어가 추가되었습니다.`;
+	if (result.duplicate > 0) {
+		message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
+	}
+	alert(message);
+
+	document.getElementById("bulkInput").value = "";
+}
+
 function addBulkWordsReturn(newWords) {
 	if (newWords.length === 0) {
 		return { added: 0, duplicate: 0 };
@@ -838,270 +755,6 @@ function addBulkWordsReturn(newWords) {
 
 	return { added: addedCount, duplicate: duplicateCount };
 }
-try {
-	const workbook = XLSX.read(arrayBuffer, { type: "array" });
-	const sheetName = workbook.SheetNames[0];
-	const worksheet = workbook.Sheets[sheetName];
-	const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-	const newWords = [];
-	let startRow = 0;
-
-	// 첫 번째 행이 헤더인지 확인
-	if (jsonData.length > 0 && jsonData[0].length >= 2) {
-		const firstCell = jsonData[0][0]?.toString().toLowerCase().trim();
-		const secondCell = jsonData[0][1]?.toString().toLowerCase().trim();
-
-		const headerKeywords = [
-			"영어",
-			"english",
-			"eng",
-			"단어",
-			"word",
-			"한국어",
-			"korean",
-			"kor",
-			"뜻",
-			"meaning",
-		];
-		const isHeader = headerKeywords.some(
-			(keyword) => firstCell?.includes(keyword) || secondCell?.includes(keyword)
-		);
-
-		if (isHeader) {
-			startRow = 1;
-		}
-	}
-
-	// 데이터 행부터 처리
-	for (let i = startRow; i < jsonData.length; i++) {
-		const row = jsonData[i];
-		if (row.length >= 2 && row[0] && row[1]) {
-			const english = row[0].toString().trim();
-			const korean = row[1].toString().trim();
-			const pos = row[2] ? row[2].toString().trim() : "";
-
-			if (english && korean) {
-				newWords.push({ english, korean, pos });
-			}
-		}
-	}
-
-	addBulkWords(newWords);
-} catch (error) {
-	alert("Excel 파일 처리 중 오류가 발생했습니다: " + error.message);
-}
-
-function processJsonFile(text) {
-	try {
-		const data = JSON.parse(text);
-		const newWords = [];
-
-		if (Array.isArray(data)) {
-			data.forEach((item) => {
-				if (item.english && item.korean) {
-					newWords.push({
-						english: item.english.toString().trim(),
-						korean: item.korean.toString().trim(),
-						pos: item.pos ? item.pos.toString().trim() : "",
-					});
-				}
-			});
-		} else {
-			alert("JSON 형식이 올바르지 않습니다. 배열 형태여야 합니다.");
-			return;
-		}
-
-		addBulkWords(newWords);
-	} catch (error) {
-		alert("JSON 파일 처리 중 오류가 발생했습니다: " + error.message);
-	}
-}
-
-function processCsvFile(text) {
-	try {
-		Papa.parse(text, {
-			complete: function (results) {
-				const newWords = [];
-				results.data.forEach((row) => {
-					if (row.length >= 2 && row[0] && row[1]) {
-						const english = row[0].toString().trim();
-						const korean = row[1].toString().trim();
-						const pos = row[2] ? row[2].toString().trim() : "";
-
-						if (english && korean) {
-							newWords.push({ english, korean, pos });
-						}
-					}
-				});
-				addBulkWords(newWords);
-			},
-			error: function (error) {
-				alert("CSV 파일 처리 중 오류가 발생했습니다: " + error.message);
-			},
-		});
-	} catch (error) {
-		alert("CSV 파일 처리 중 오류가 발생했습니다: " + error.message);
-	}
-}
-
-function processTxtFile(text) {
-	try {
-		const lines = text.split("\n");
-		const newWords = [];
-
-		lines.forEach((line) => {
-			line = line.trim();
-			if (line) {
-				let parts;
-				// 파이프(|) 구분자 우선, 없으면 쉼표, 없으면 콜론
-				if (line.includes("|")) {
-					parts = line.split("|");
-				} else if (line.includes(",")) {
-					parts = line.split(",");
-				} else if (line.includes(":")) {
-					parts = line.split(":");
-				} else {
-					return;
-				}
-
-				if (parts.length >= 2) {
-					const english = parts[0].trim();
-					const korean = parts[1].trim();
-					const pos = parts[2] ? parts[2].trim() : "";
-
-					if (english && korean) {
-						newWords.push({ english, korean, pos });
-					}
-				}
-			}
-		});
-
-		addBulkWords(newWords);
-	} catch (error) {
-		alert("TXT 파일 처리 중 오류가 발생했습니다: " + error.message);
-	}
-}
-
-function processBulkInput() {
-	const input = document.getElementById("bulkInput").value.trim();
-	if (!input) {
-		alert("내용을 입력해주세요.");
-		return;
-	}
-
-	const lines = input.split("\n");
-	const newWords = [];
-
-	lines.forEach((line) => {
-		line = line.trim();
-		if (line) {
-			let parts;
-			// 파이프(|) 구분자 우선, 없으면 쉼표, 없으면 콜론
-			if (line.includes("|")) {
-				parts = line.split("|");
-			} else if (line.includes(",")) {
-				parts = line.split(",");
-			} else if (line.includes(":")) {
-				parts = line.split(":");
-			} else {
-				return;
-			}
-
-			if (parts.length >= 2) {
-				const english = parts[0].trim();
-				const korean = parts[1].trim();
-				const pos = parts[2] ? parts[2].trim() : "";
-
-				if (english && korean) {
-					newWords.push({ english, korean, pos });
-				}
-			}
-		}
-	});
-
-	addBulkWords(newWords);
-	document.getElementById("bulkInput").value = "";
-}
-
-// 기존 단일 파일용 함수들 (하위 호환성)
-function processExcelFile(arrayBuffer) {
-	const result = processExcelFileReturn(arrayBuffer);
-	if (result.added > 0 || result.duplicate > 0) {
-		let message = `${result.added}개의 단어가 추가되었습니다.`;
-		if (result.duplicate > 0) {
-			message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
-		}
-		alert(message);
-	}
-}
-
-function processJsonFile(text) {
-	const result = processJsonFileReturn(text);
-	if (result.added > 0 || result.duplicate > 0) {
-		let message = `${result.added}개의 단어가 추가되었습니다.`;
-		if (result.duplicate > 0) {
-			message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
-		}
-		alert(message);
-	}
-}
-
-function processCsvFile(text) {
-	processCsvFileWithCallback(text, (result) => {
-		if (result.added > 0 || result.duplicate > 0) {
-			let message = `${result.added}개의 단어가 추가되었습니다.`;
-			if (result.duplicate > 0) {
-				message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
-			}
-			alert(message);
-		}
-	});
-}
-
-function processTxtFile(text) {
-	const result = processTxtFileReturn(text);
-	if (result.added > 0 || result.duplicate > 0) {
-		let message = `${result.added}개의 단어가 추가되었습니다.`;
-		if (result.duplicate > 0) {
-			message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
-		}
-		alert(message);
-	}
-}
-
-function addBulkWords(newWords) {
-	if (newWords.length === 0) {
-		alert("처리할 수 있는 단어가 없습니다.");
-		return;
-	}
-
-	let addedCount = 0;
-	let duplicateCount = 0;
-
-	newWords.forEach((newWord) => {
-		const exists = words.find(
-			(word) => word.english.toLowerCase() === newWord.english.toLowerCase()
-		);
-
-		if (!exists) {
-			words.push(newWord);
-			addedCount++;
-		} else {
-			duplicateCount++;
-		}
-	});
-
-	saveWords();
-	updateWordCount();
-	displayWords();
-
-	let message = `${addedCount}개의 단어가 추가되었습니다.`;
-	if (duplicateCount > 0) {
-		message += `\n${duplicateCount}개의 중복 단어는 제외되었습니다.`;
-	}
-	alert(message);
-}
 
 // 내보내기 함수들
 function exportData(format) {
@@ -1121,7 +774,6 @@ function exportData(format) {
 			break;
 
 		case "csv":
-			// CSV는 따옴표로 감싸서 쉼표 보호
 			content = words
 				.map((word) => {
 					const pos = word.pos || "";
@@ -1135,7 +787,6 @@ function exportData(format) {
 			break;
 
 		case "txt":
-			// TXT는 파이프(|)로 구분
 			content = words
 				.map((word) => {
 					const pos = word.pos || "";
@@ -1159,7 +810,6 @@ function exportData(format) {
 			return;
 	}
 
-	// UTF-8 BOM 추가 (Excel에서 한글 깨짐 방지)
 	const BOM = "\uFEFF";
 	const blob = new Blob([BOM + content], { type: mimeType });
 	const url = URL.createObjectURL(blob);
@@ -1206,7 +856,6 @@ function showNextQuestion() {
         <div id="testResult"></div>
     `;
 
-	// 선택지 버튼에 이벤트 리스너 추가
 	const choiceButtons = document.querySelectorAll(".choice-btn");
 	choiceButtons.forEach((btn) => {
 		btn.addEventListener("click", function () {
@@ -1224,7 +873,6 @@ function generateChoices(correctWord) {
 		(word) =>
 			word.english !== correctWord.english && word.korean !== correctWord.korean
 	);
-
 	const shuffledOthers = otherWords.sort(() => Math.random() - 0.5);
 
 	for (let i = 0; i < Math.min(3, shuffledOthers.length); i++) {
@@ -1257,16 +905,13 @@ function selectChoice(index, choice) {
 
 	selectedChoice = choice;
 
-	// 모든 버튼 비활성화
 	choiceBtns.forEach((btn) => {
 		btn.classList.add("disabled");
 		btn.onclick = null;
 	});
 
-	// 선택한 버튼 표시
 	choiceBtns[index].classList.add("selected");
 
-	// 정답/오답 표시
 	choiceBtns.forEach((btn) => {
 		if (btn.textContent === correctAnswer) {
 			btn.classList.add("correct");
@@ -1291,7 +936,6 @@ function selectChoice(index, choice) {
 
 	updateTestUI();
 
-	// 0.5초 후 자동으로 다음 문제
 	setTimeout(() => {
 		currentTest++;
 		showNextQuestion();
