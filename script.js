@@ -191,8 +191,8 @@ function displayWords() {
                 </div>
                 <div class="word-korean">${word.korean}</div>
             </div>
-            <div style="display: flex; gap: 5px;">
-                <button class="btn" style="padding: 5px 10px; font-size: 12px; background: #667eea;" onclick="editWord(${index})">수정</button>
+            <div class="word-buttons">
+                <button class="edit-btn" onclick="editWord(${index})">수정</button>
                 <button class="delete-btn" onclick="deleteWord(${index})">삭제</button>
             </div>
         </div>
