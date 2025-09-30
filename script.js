@@ -30,6 +30,8 @@ let selectedChoice = null;
 let wrongAnswersList = [];
 let currentChoices = [];
 let correctAnswer = "";
+let timerInterval = null;
+let timeLeft = 5;
 
 // 페이지 로드 시 초기화
 window.onload = function () {
@@ -253,7 +255,7 @@ function startTest() {
 	}
 
 	const shuffled = [...words].sort(() => Math.random() - 0.5);
-	testWords = shuffled.slice(0, Math.min(400, words.length));
+	testWords = shuffled.slice(0, Math.min(500, words.length));
 
 	currentTest = 0;
 	correctAnswers = 0;
@@ -268,10 +270,71 @@ function startTest() {
 }
 
 function skipQuestion() {
+	if (timerInterval) {
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
 	wrongAnswers++;
 	currentTest++;
 	updateTestUI();
 	showNextQuestion();
+}
+
+function startTimer() {
+	timeLeft = 5;
+	updateTimerDisplay();
+
+	if (timerInterval) {
+		clearInterval(timerInterval);
+	}
+
+	timerInterval = setInterval(() => {
+		timeLeft--;
+		updateTimerDisplay();
+
+		if (timeLeft <= 0) {
+			clearInterval(timerInterval);
+			timerInterval = null;
+			handleTimeout();
+		}
+	}, 1000);
+}
+
+function updateTimerDisplay() {
+	const timerElement = document.getElementById("timer");
+	if (timerElement) {
+		timerElement.textContent = timeLeft;
+		timerElement.style.color = timeLeft <= 2 ? "#dc3545" : "#667eea";
+	}
+}
+
+function handleTimeout() {
+	if (selectedChoice !== null) return;
+
+	wrongAnswers++;
+	wrongAnswersList.push({
+		word: testWords[currentTest],
+		userAnswer: "(시간 초과)",
+		correctAnswer: correctAnswer,
+	});
+
+	const choiceBtns = document.querySelectorAll(".choice-btn");
+	choiceBtns.forEach((btn) => {
+		btn.classList.add("disabled");
+		if (btn.textContent === correctAnswer) {
+			btn.classList.add("correct");
+		}
+	});
+
+	const resultDiv = document.getElementById("testResult");
+	resultDiv.innerHTML = `<div class="result incorrect">시간 초과! 정답: ${correctAnswer}</div>`;
+
+	updateTestUI();
+
+	setTimeout(() => {
+		currentTest++;
+		showNextQuestion();
+	}, 1000);
 }
 
 function updateTestUI() {
@@ -282,6 +345,11 @@ function updateTestUI() {
 }
 
 function endTest() {
+	if (timerInterval) {
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
+
 	isTestActive = false;
 	const accuracy =
 		testWords.length > 0
@@ -885,7 +953,10 @@ function showNextQuestion() {
 	});
 
 	testCard.innerHTML = `
-        <div class="test-word">${currentWord.english}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="test-word">${currentWord.english}</div>
+            <div style="font-size: 3rem; font-weight: bold; color: #667eea; min-width: 60px; text-align: center;" id="timer">5</div>
+        </div>
         <div style="margin: 20px 0;" id="choicesContainer">
             ${choicesHTML}
         </div>
@@ -904,6 +975,8 @@ function showNextQuestion() {
 			selectChoice(index, choice);
 		});
 	});
+
+	startTimer();
 }
 
 function generateChoices(correctWord) {
@@ -938,6 +1011,11 @@ function generateChoices(correctWord) {
 
 function selectChoice(index, choice) {
 	if (selectedChoice !== null) return;
+
+	if (timerInterval) {
+		clearInterval(timerInterval);
+		timerInterval = null;
+	}
 
 	const choiceBtns = document.querySelectorAll(".choice-btn");
 	const resultDiv = document.getElementById("testResult");
@@ -979,5 +1057,5 @@ function selectChoice(index, choice) {
 	setTimeout(() => {
 		currentTest++;
 		showNextQuestion();
-	}, 1000);
+	}, 800);
 }
