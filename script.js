@@ -571,16 +571,21 @@ function setupFileUpload() {
 
 		let totalAdded = 0;
 		let totalDuplicate = 0;
+		let allDuplicateWords = []; // 중복 단어 목록 저장
 
 		for (let i = 0; i < files.length; i++) {
 			const result = await processFileAsync(files[i]);
 			totalAdded += result.added;
 			totalDuplicate += result.duplicate;
+			if (result.duplicateWords && result.duplicateWords.length > 0) {
+				allDuplicateWords = allDuplicateWords.concat(result.duplicateWords);
+			}
 		}
 
 		let message = `${totalAdded}개의 단어가 추가되었습니다.`;
 		if (totalDuplicate > 0) {
-			message += `\n${totalDuplicate}개의 중복 단어는 제외되었습니다.`;
+			message += `\n\n${totalDuplicate}개의 중복 단어는 제외되었습니다.`;
+			message += `\n\n중복된 단어 목록:\n${allDuplicateWords.join(", ")}`;
 		}
 		alert(message);
 
@@ -638,7 +643,7 @@ function processFileAsync(file) {
 
 			default:
 				alert("지원하지 않는 파일 형식입니다: " + file.name);
-				resolve({ added: 0, duplicate: 0 });
+				resolve({ added: 0, duplicate: 0, duplicateWords: [] });
 		}
 	});
 }
@@ -695,7 +700,7 @@ function processExcelFile(arrayBuffer) {
 		return addBulkWordsReturn(newWords);
 	} catch (error) {
 		alert("Excel 파일 처리 중 오류가 발생했습니다: " + error.message);
-		return { added: 0, duplicate: 0 };
+		return { added: 0, duplicate: 0, duplicateWords: [] };
 	}
 }
 
@@ -716,13 +721,13 @@ function processJsonFile(text) {
 			});
 		} else {
 			alert("JSON 형식이 올바르지 않습니다. 배열 형태여야 합니다.");
-			return { added: 0, duplicate: 0 };
+			return { added: 0, duplicate: 0, duplicateWords: [] };
 		}
 
 		return addBulkWordsReturn(newWords);
 	} catch (error) {
 		alert("JSON 파일 처리 중 오류가 발생했습니다: " + error.message);
-		return { added: 0, duplicate: 0 };
+		return { added: 0, duplicate: 0, duplicateWords: [] };
 	}
 }
 
@@ -747,12 +752,12 @@ function processCsvFile(text, callback) {
 			},
 			error: function (error) {
 				alert("CSV 파일 처리 중 오류가 발생했습니다: " + error.message);
-				callback({ added: 0, duplicate: 0 });
+				callback({ added: 0, duplicate: 0, duplicateWords: [] });
 			},
 		});
 	} catch (error) {
 		alert("CSV 파일 처리 중 오류가 발생했습니다: " + error.message);
-		callback({ added: 0, duplicate: 0 });
+		callback({ added: 0, duplicate: 0, duplicateWords: [] });
 	}
 }
 
@@ -790,7 +795,7 @@ function processTxtFile(text) {
 		return addBulkWordsReturn(newWords);
 	} catch (error) {
 		alert("TXT 파일 처리 중 오류가 발생했습니다: " + error.message);
-		return { added: 0, duplicate: 0 };
+		return { added: 0, duplicate: 0, duplicateWords: [] };
 	}
 }
 
@@ -833,7 +838,10 @@ function processBulkInput() {
 	const result = addBulkWordsReturn(newWords);
 	let message = `${result.added}개의 단어가 추가되었습니다.`;
 	if (result.duplicate > 0) {
-		message += `\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
+		message += `\n\n${result.duplicate}개의 중복 단어는 제외되었습니다.`;
+		if (result.duplicateWords && result.duplicateWords.length > 0) {
+			message += `\n\n중복된 단어 목록:\n${result.duplicateWords.join(", ")}`;
+		}
 	}
 	alert(message);
 
@@ -842,11 +850,12 @@ function processBulkInput() {
 
 function addBulkWordsReturn(newWords) {
 	if (newWords.length === 0) {
-		return { added: 0, duplicate: 0 };
+		return { added: 0, duplicate: 0, duplicateWords: [] };
 	}
 
 	let addedCount = 0;
 	let duplicateCount = 0;
+	let duplicateWords = []; // 중복된 단어 목록
 
 	newWords.forEach((newWord) => {
 		const exists = words.find(
@@ -858,6 +867,7 @@ function addBulkWordsReturn(newWords) {
 			addedCount++;
 		} else {
 			duplicateCount++;
+			duplicateWords.push(newWord.english); // 중복된 단어 추가
 		}
 	});
 
@@ -865,7 +875,11 @@ function addBulkWordsReturn(newWords) {
 	updateWordCount();
 	displayWords();
 
-	return { added: addedCount, duplicate: duplicateCount };
+	return {
+		added: addedCount,
+		duplicate: duplicateCount,
+		duplicateWords: duplicateWords,
+	};
 }
 
 // 내보내기 함수들
