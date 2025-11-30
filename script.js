@@ -255,7 +255,7 @@ function startTest() {
 	}
 
 	const shuffled = [...words].sort(() => Math.random() - 0.5);
-	testWords = shuffled.slice(0, Math.min(500, words.length));
+	testWords = shuffled.slice(0, Math.min(250, words.length));
 
 	currentTest = 0;
 	correctAnswers = 0;
